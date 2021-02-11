@@ -1,7 +1,6 @@
 
 -module mobius.
 -export [is_prime/1, prime_factors/1, is_square_multiple/1, find_square_multiples/2].
-% -export [test/0].
 
 is_prime(1) -> true;
 is_prime(N) ->
@@ -20,14 +19,9 @@ prime_factors(N) ->
 
 prime_factors(N, C, Result) when C > N -> Result;
 prime_factors(N, C, Result) ->
-	IsPrime = is_prime(C),
-	if 
-		IsPrime ->
-			if
-				N rem C == 0 -> prime_factors(N div C, C, [C | Result]);
-				true -> prime_factors(N, C + 1, Result) % is this required?
-			end;
-		true -> prime_factors(N, C + 1, Result)
+	if
+		N rem C == 0 -> prime_factors(N div C, C, [C | Result]);
+		true -> prime_factors(N, C + 1, Result) % is this required?
 	end.
 
 is_square_multiple(N) -> 
