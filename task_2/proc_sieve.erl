@@ -1,7 +1,6 @@
 
 -module proc_sieve.
 -export [generate/1, sieve/0, sieve/1].
-
 		
 generate(MaxN) ->
 	S = lists:seq(2, MaxN),
