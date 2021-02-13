@@ -1,6 +1,7 @@
 
 - module rss_parse.
 - export [is_rss2_feed/1, get_feed_items/1, get_item_time/1, compare_feed_items/2].
+- export [test/0].
 - include_lib("xmerl/include/xmerl.hrl").
 
 is_rss2_feed(RssFeed) ->
@@ -42,7 +43,7 @@ get_item_time(Item) ->
 % @spec extract_xml(Node::xmlAny()) -> xmlAny()
 %
 extract_xml(Elem = #xmlElement{}) ->
-    Elem#xmlElement{parents=[], pos=0,
+    Elem#xmlElement{parents=[], pos=0, xmlbase=undeclared,
         content=lists:map(fun extract_xml/1, Elem#xmlElement.content),
         attributes=lists:map(fun extract_xml/1, Elem#xmlElement.attributes)};
 extract_xml(Attr = #xmlAttribute{}) ->
@@ -97,3 +98,11 @@ compare_subelement(OldItem, NewItem, Subelement) ->
 				_Else -> false
 			end
 	end.
+
+test() ->
+	{Rss, _} = xmerl_scan:file("test.xml"),
+	Items = rss_parse:get_feed_items(Rss),
+	Old = extract_xml(lists:nth(1, Items)),
+	New = extract_xml(lists:nth(2, Items)),
+	io:format("~p~n~n~n~p~n", [Old, New]),
+	Old =:= New.
