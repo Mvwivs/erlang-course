@@ -26,14 +26,24 @@ get_items(_Node) -> [].
 get_item(Element) ->
 	case Element of
 		#xmlElement{name = Name} when Name =:= item ->
-			[Element];
+			case get_item_time(Element) of
+				bad_date -> []; % skip items without date
+				_Else -> [Element]
+			end;
 		_Else -> get_items(Element)
 	end.
-	
+
 get_item_time(Item) ->
 	Date = find_subelement(Item, pubDate),
-	calendar:datetime_to_gregorian_seconds(
-		httpd_util:convert_request_date(Date)). % TODO: add error checking
+	case Date of 
+		false -> bad_date;
+		_Else ->
+			ErlangDate = httpd_util:convert_request_date(Date),
+			if
+				ErlangDate =:= bad_date -> bad_date;
+				true -> calendar:datetime_to_gregorian_seconds(ErlangDate)
+			end
+	end.
 
 % @private
 % @doc Given an XML element of some kind, this helper function will go through
