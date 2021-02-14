@@ -2,3 +2,4 @@
 .vscode/
 
 *.beam
+*.log

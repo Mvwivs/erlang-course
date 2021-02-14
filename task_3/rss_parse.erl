@@ -1,6 +1,6 @@
 
 - module rss_parse.
-- export [is_rss2_feed/1, get_feed_items/1, get_item_time/1, compare_feed_items/2].
+- export [is_rss2_feed/1, get_feed_items/1, get_item_time/1, compare_feed_items/2, find_subelement/2].
 - export [test/0].
 - include_lib("xmerl/include/xmerl.hrl").
 
