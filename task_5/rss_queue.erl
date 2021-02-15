@@ -1,10 +1,14 @@
 
+%% @doc RSS Queue module. Periodically retrieves items from RSS feed, allows feed aggregation.
+%% @author Mazov Vladimir
+
 - module (rss_queue).
 - export [start/0, start/1, init/1].
 - export [add_item/2, add_feed/2, get_all/1].
 - export [test/0].
 - include ("logging.hrl").
 
+%% @doc Server loop. Receives messages from clients and sends replies.
 server(State = {Queue, Subscribers}) ->
 	receive 
 		{add_item, RSSItem} -> 
@@ -47,9 +51,11 @@ server(State = {Queue, Subscribers}) ->
 				false -> server(State) % ignore
 			end
 	end.
+%% @doc Starts default server.
 server() ->
 	server({[], sets:new()}).
 
+%% @doc Tries to add rss item to queue if possible. Ignores if item already exists.
 try_add_item(Item, Queue) ->
 	CompRes = check_items(Item, Queue, 0),
 	case CompRes of
@@ -64,7 +70,7 @@ try_add_item(Item, Queue) ->
 			{updated, lists:sort(fun pub_date_comp/2, NewQueue)}
 	end.
 
-
+%% @doc Checks if rss item is present in queue.
 check_items(_Item, [], _Pos) -> different;
 check_items(Item, [Old | Rest], Pos) ->
 	Res = rss_parse:compare_feed_items(Old, Item),
@@ -74,21 +80,23 @@ check_items(Item, [Old | Rest], Pos) ->
 		_Else -> check_items(Item, Rest, Pos + 1)
 	end.
 
+%% @doc Compares two rss items by their publish date.
 pub_date_comp(Item1, Item2) ->
 	Time1 = rss_parse:get_item_time(Item1),
 	Time2 = rss_parse:get_item_time(Item2),
 	Time1 > Time2.
 
+%% @doc Removes item from list by index.
 remove_from_list(Index, List) ->
 	{Left, [_|Right]} = lists:split(Index - 1, List),
 	Left ++ Right.
 
-start() ->
-	spawn(rss_queue, init, [[]]).
 
+%% @doc Adds item to running rss_queue server
 add_item(QPid, Item) when is_pid(QPid) ->
 	QPid ! {add_item, Item}.
 
+%% @doc Extracts all items from feed and adds them to running rss_queue server
 add_feed(QPid, RSS2Feed) when is_pid(QPid) ->
 	Items = rss_parse:get_feed_items(RSS2Feed),
 	lists:foreach(fun(Item) -> 
@@ -98,6 +106,7 @@ add_feed(QPid, RSS2Feed) when is_pid(QPid) ->
 
 - define(TIMEOUT, 1000).
 
+%% @doc Reads all items from queue.
 get_all(QPid) when is_pid(QPid) ->
 	QPid ! {get_all, self()},
 	receive
@@ -105,9 +114,15 @@ get_all(QPid) when is_pid(QPid) ->
 	after ?TIMEOUT -> {error, timeout}
 	end.
 
+%% @doc Spawns rss_queue server.
+start() ->
+	spawn(rss_queue, init, [[]]).
+
+%% @doc Spawns rss_queue with specified URL.
 start(Url) ->
 	spawn(rss_queue, init, [[Url]]).
 
+%% @doc Initialize rss_queue. If URL is provided, starts queue with rss_reader.  
 init([]) ->
 	server();
 init([Url]) -> 
@@ -115,6 +130,8 @@ init([Url]) ->
 	link(RssPid),
 	server().
 
+%% @doc Simple test case. Starts 3 rss_readers and 2 aggregating queues.
+- spec test() -> pid().
 test() ->
 	inets:start(),
 	ssl:start(),
